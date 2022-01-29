@@ -149,6 +149,7 @@ public class ArrayList<E> extends AbstractList<E>
      *         is negative
      */
     public ArrayList(int initialCapacity) {
+        // 推荐初始化时指定数组大小, 给定一个预估的大小
         if (initialCapacity > 0) {
             this.elementData = new Object[initialCapacity];
         } else if (initialCapacity == 0) {
@@ -163,6 +164,7 @@ public class ArrayList<E> extends AbstractList<E>
      * Constructs an empty list with an initial capacity of ten.
      */
     public ArrayList() {
+        // 默认创建一个长度为0的空数组
         this.elementData = DEFAULTCAPACITY_EMPTY_ELEMENTDATA;
     }
 
@@ -432,8 +434,10 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public E get(int index) {
+        // 1. 判断index是否合法
         rangeCheck(index);
 
+        // 2. 直接基于index下标定位到元素
         return elementData(index);
     }
 
@@ -447,9 +451,12 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public E set(int index, E element) {
+        // 1. 判断index是否合法
         rangeCheck(index);
 
+        // 2. 从数组中取出下标为index的旧值, 返回出去
         E oldValue = elementData(index);
+        // 3. 将新值放到下标为index的位置
         elementData[index] = element;
         return oldValue;
     }
@@ -461,7 +468,9 @@ public class ArrayList<E> extends AbstractList<E>
      * @return <tt>true</tt> (as specified by {@link Collection#add})
      */
     public boolean add(E e) {
+        // 1. 确保数组长度足够, 长度不够就扩容
         ensureCapacityInternal(size + 1);  // Increments modCount!!
+        // 2. 设置元素到数组尾部, 然后数组大小+1
         elementData[size++] = e;
         return true;
     }
@@ -476,12 +485,17 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public void add(int index, E element) {
+        // 1. 判断index是否合法
         rangeCheckForAdd(index);
 
+        // 2. 确保数组长度足够, 长度不够就扩容
         ensureCapacityInternal(size + 1);  // Increments modCount!!
+        // 3. index后面的元素全部往后面移动1位
         System.arraycopy(elementData, index, elementData, index + 1,
                          size - index);
+        // 4. 将元素放下标为index的位置
         elementData[index] = element;
+        // 5. 维护元素大小size, 加一
         size++;
     }
 
@@ -495,15 +509,19 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public E remove(int index) {
+        // 1. 判断index是否合法
         rangeCheck(index);
 
         modCount++;
+        // 2. 从数组中取出下标为index的旧值, 返回出去
         E oldValue = elementData(index);
 
+        // 3. index后面的元素全部往前面移动1位
         int numMoved = size - index - 1;
         if (numMoved > 0)
             System.arraycopy(elementData, index+1, elementData, index,
                              numMoved);
+        // 4. 将元素释放, 不再被ArrayList引用, 让GC能回收这个元素
         elementData[--size] = null; // clear to let GC do its work
 
         return oldValue;
