@@ -225,13 +225,17 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     private static int calculateCapacity(Object[] elementData, int minCapacity) {
+        // 如果是第一次添加元素, 默认会返回10
         if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
             return Math.max(DEFAULT_CAPACITY, minCapacity);
         }
+        // 否则默认返回minCapacity
         return minCapacity;
     }
 
     private void ensureCapacityInternal(int minCapacity) {
+        // calculateCapacity会保证第一次进来的时候, 初始化大小为10, 后面再进来的话都取minCapacity
+        // ensureExplicitCapacity会根据计算出来的capacity大小, 进行扩容
         ensureExplicitCapacity(calculateCapacity(elementData, minCapacity));
     }
 
@@ -239,7 +243,9 @@ public class ArrayList<E> extends AbstractList<E>
         modCount++;
 
         // overflow-conscious code
+        // capacity比数组大小大, 说明必须扩容了
         if (minCapacity - elementData.length > 0)
+            // grow根据capacity进行扩容
             grow(minCapacity);
     }
 
@@ -259,13 +265,18 @@ public class ArrayList<E> extends AbstractList<E>
      */
     private void grow(int minCapacity) {
         // overflow-conscious code
+        // 1. 只有数组满了才会进来, 所以数组长度就是上次扩容后的capacity
+        //    这里以第一次扩容为例, oldCapacity为10
         int oldCapacity = elementData.length;
+        // 2. 扩容后的新数组长度, newCapacity = oldCapacity + oldCapacity/2 = 15
         int newCapacity = oldCapacity + (oldCapacity >> 1);
+
         if (newCapacity - minCapacity < 0)
             newCapacity = minCapacity;
         if (newCapacity - MAX_ARRAY_SIZE > 0)
             newCapacity = hugeCapacity(minCapacity);
         // minCapacity is usually close to size, so this is a win:
+        // 3. 扩容后进行数组拷贝, 耗费性能
         elementData = Arrays.copyOf(elementData, newCapacity);
     }
 
