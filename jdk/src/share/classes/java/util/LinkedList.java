@@ -191,15 +191,23 @@ public class LinkedList<E>
      */
     private E unlinkFirst(Node<E> f) {
         // assert f == first && f != null;
+        // 1. 取出first指针指向的节点的元素, 最后返回出去
         final E element = f.item;
+        // 2. 暂存first指针的后一个节点, first指针会指向这个next指针
         final Node<E> next = f.next;
+        // 3. 置为null, 用于GC回收
         f.item = null;
         f.next = null; // help GC
+        // 4. first指针指向刚才取出的next指针
         first = next;
         if (next == null)
+            // 如果first指针指向的next为null, 就说明当前链表只有这一个元素
+            // 移除了这个元素, 那么last指针也要置为null
             last = null;
         else
+            // 否则也把next.prev置为null, 失去引用, 用于GC回收
             next.prev = null;
+        // 5. 链表长度-1
         size--;
         modCount++;
         return element;
@@ -210,15 +218,23 @@ public class LinkedList<E>
      */
     private E unlinkLast(Node<E> l) {
         // assert l == last && l != null;
+        // 1. 取出last指针指向的节点的元素, 最后返回出去
         final E element = l.item;
+        // 2. 暂存last指针的前一个节点, last指针会指向这个prev指针
         final Node<E> prev = l.prev;
+        // 3. 置为null, 用于GC回收
         l.item = null;
         l.prev = null; // help GC
+        // 4. last指针指向刚才取出的prev指针
         last = prev;
         if (prev == null)
+            // 如果last指针指向的prev为null, 就说明当前链表只有这一个元素
+            // 移除了这个元素, 那么first指针也要置为null
             first = null;
         else
+            // 否则也把prev.next置为null, 失去引用, 用于GC回收
             prev.next = null;
+        // 5. 链表长度-1
         size--;
         modCount++;
         return element;
@@ -229,25 +245,44 @@ public class LinkedList<E>
      */
     E unlink(Node<E> x) {
         // assert x != null;
+        // 1. 将这个x节点的值、prev指针、next指针都暂存起来
         final E element = x.item;
         final Node<E> next = x.next;
         final Node<E> prev = x.prev;
 
+        // 2. 维护x和prev之间的关联关系
         if (prev == null) {
+            // 如果prev节点为null, 就说明x节点是第一个节点
+            // 删除第一个节点, 那first指针就会指向第二个节点, 也就是next节点
             first = next;
         } else {
+            // 如果prev节点不为null, 就说明x节点不是第一个节点
+            // 那么就把prev节点的next指针, 指向next节点, 绕过x节点
+            // 此时有2条链路, prev <- x <=> next, prev -> next
             prev.next = next;
+            // 那x的prev指针置为null
+            // 此时有2条链路, prev X x <=> next, prev -> next
             x.prev = null;
         }
 
+        // 3. 维护x和next之间的关联关系
         if (next == null) {
+            // 如果next节点为null, 就说明x节点是最后一个节点
+            // 删除最后一个节点, 那last指针就会指向倒数第二个节点, 也就是prev节点
             last = prev;
         } else {
+            // 如果next节点不为null, 就说明x节点不是最后一个节点
+            // 那么就把next节点的prev指针, 指向prev节点, 绕过x节点
+            // 此时有2条链路, prev X x -> next, prev <=> next
             next.prev = prev;
+            // 那x的next指针置为null
+            // 此时有1条链路, prev X x X next, prev <=> next
             x.next = null;
         }
 
+        // 4. 将x节点自己的元素置为null, 用于GC
         x.item = null;
+        // 5. 链表长度-1
         size--;
         modCount++;
         return element;
@@ -380,12 +415,14 @@ public class LinkedList<E>
         if (o == null) {
             for (Node<E> x = first; x != null; x = x.next) {
                 if (x.item == null) {
+                    // 定位到这个节点, 然后进行删除
                     unlink(x);
                     return true;
                 }
             }
         } else {
             for (Node<E> x = first; x != null; x = x.next) {
+                // 定位到这个节点, 然后进行删除
                 if (o.equals(x.item)) {
                     unlink(x);
                     return true;
@@ -549,7 +586,9 @@ public class LinkedList<E>
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public E remove(int index) {
+        // 1. 判断index是否合法
         checkElementIndex(index);
+        // 2. 先找到index所在的node节点, 然后进行删除
         return unlink(node(index));
     }
 
