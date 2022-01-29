@@ -243,7 +243,7 @@ public class ArrayList<E> extends AbstractList<E>
         modCount++;
 
         // overflow-conscious code
-        // capacity比数组大小大, 说明必须扩容了
+        // capacity比元素数量大, 说明必须扩容了
         if (minCapacity - elementData.length > 0)
             // grow根据capacity进行扩容
             grow(minCapacity);
@@ -481,7 +481,7 @@ public class ArrayList<E> extends AbstractList<E>
     public boolean add(E e) {
         // 1. 确保数组长度足够, 长度不够就扩容
         ensureCapacityInternal(size + 1);  // Increments modCount!!
-        // 2. 设置元素到数组尾部, 然后数组大小+1
+        // 2. 设置元素到数组尾部, 然后元素数量+1
         elementData[size++] = e;
         return true;
     }

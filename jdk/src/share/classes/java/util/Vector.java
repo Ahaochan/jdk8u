@@ -247,7 +247,9 @@ public class Vector<E>
      */
     private void ensureCapacityHelper(int minCapacity) {
         // overflow-conscious code
+        // capacity比元素数量大, 说明必须扩容了
         if (minCapacity - elementData.length > 0)
+            // grow根据capacity进行扩容
             grow(minCapacity);
     }
 
@@ -261,13 +263,18 @@ public class Vector<E>
 
     private void grow(int minCapacity) {
         // overflow-conscious code
+        // 1. 只有数组满了才会进来, 所以数组长度就是上次扩容后的capacity
+        //    这里以第一次扩容为例, oldCapacity为10
         int oldCapacity = elementData.length;
+        // 2. 扩容后的新数组长度, capacityIncrement默认为0
+        //    newCapacity = oldCapacity * 2 = 20
         int newCapacity = oldCapacity + ((capacityIncrement > 0) ?
                                          capacityIncrement : oldCapacity);
         if (newCapacity - minCapacity < 0)
             newCapacity = minCapacity;
         if (newCapacity - MAX_ARRAY_SIZE > 0)
             newCapacity = hugeCapacity(minCapacity);
+        // 3. 扩容后进行数组拷贝, 耗费性能
         elementData = Arrays.copyOf(elementData, newCapacity);
     }
 
@@ -559,6 +566,7 @@ public class Vector<E>
      */
     public synchronized void removeElementAt(int index) {
         modCount++;
+        // 1. 判断index是否合法
         if (index >= elementCount) {
             throw new ArrayIndexOutOfBoundsException(index + " >= " +
                                                      elementCount);
@@ -566,10 +574,12 @@ public class Vector<E>
         else if (index < 0) {
             throw new ArrayIndexOutOfBoundsException(index);
         }
+        // 2. index后面的元素全部往前面移动1位
         int j = elementCount - index - 1;
         if (j > 0) {
             System.arraycopy(elementData, index + 1, elementData, index, j);
         }
+        // 3. 将元素释放, 不再被ArrayList引用, 让GC能回收这个元素
         elementCount--;
         elementData[elementCount] = null; /* to let gc do its work */
     }
@@ -621,8 +631,11 @@ public class Vector<E>
      * @param   obj   the component to be added
      */
     public synchronized void addElement(E obj) {
+        // 加了synchronized锁
         modCount++;
+        // 1. 确保数组长度足够, 长度不够就扩容
         ensureCapacityHelper(elementCount + 1);
+        // 2. 设置元素到数组尾部, 然后元素数量+1
         elementData[elementCount++] = obj;
     }
 

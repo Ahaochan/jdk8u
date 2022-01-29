@@ -64,6 +64,8 @@ class Stack<E> extends Vector<E> {
      * @see     java.util.Vector#addElement
      */
     public E push(E item) {
+        // 压栈调用Vector的添加元素方法
+        // 加了synchronized锁
         addElement(item);
 
         return item;
@@ -81,7 +83,9 @@ class Stack<E> extends Vector<E> {
         E       obj;
         int     len = size();
 
+        // 1. 从数组中取出最后一个元素
         obj = peek();
+        // 2. 删除数组中最后一个元素
         removeElementAt(len - 1);
 
         return obj;
@@ -100,6 +104,7 @@ class Stack<E> extends Vector<E> {
 
         if (len == 0)
             throw new EmptyStackException();
+        // 从数组中取出最后一个元素
         return elementAt(len - 1);
     }
 
