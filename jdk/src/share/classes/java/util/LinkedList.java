@@ -123,13 +123,18 @@ public class LinkedList<E>
      * Links e as first element.
      */
     private void linkFirst(E e) {
+        // 1. 创建一个新节点, 并将链表的first指针指向这个新节点
         final Node<E> f = first;
         final Node<E> newNode = new Node<>(null, e, f);
         first = newNode;
+        // 2. 维护双向链表的引用关系
         if (f == null)
+            // 如果是第一次添加元素，那么链表的last指针也指向这个新节点
             last = newNode;
         else
+            // 否则就只是将链表的上一个first指针的prev指针, 指向这个新节点
             f.prev = newNode;
+        // 3. 链表长度+1
         size++;
         modCount++;
     }
@@ -138,13 +143,18 @@ public class LinkedList<E>
      * Links e as last element.
      */
     void linkLast(E e) {
+        // 1. 创建一个新节点, 并将链表的last指针指向这个新节点
         final Node<E> l = last;
         final Node<E> newNode = new Node<>(l, e, null);
         last = newNode;
+        // 2. 维护双向链表的引用关系
         if (l == null)
+            // 如果是第一次添加元素，那么链表的first指针也指向这个新节点
             first = newNode;
         else
+            // 否则就只是将链表的上一个last指针的next指针, 指向这个新节点
             l.next = newNode;
+        // 3. 链表长度+1
         size++;
         modCount++;
     }
@@ -154,13 +164,24 @@ public class LinkedList<E>
      */
     void linkBefore(E e, Node<E> succ) {
         // assert succ != null;
+        // 1. 保存succ节点的上一个节点为pred
         final Node<E> pred = succ.prev;
+        // 将元素e保存为一个新节点newNode, 前一个指针指向pred, 下一个指针指向succ节点
+        // 此时会有2条链, pred <=> succ, pred <- newNode -> succ
         final Node<E> newNode = new Node<>(pred, e, succ);
+        // 2. 维护双向链表的引用关系
+        // 将succ的上一个节点指向newNode
+        // 此时会有2条链, pred -> succ, pred <- newNode <=> succ
         succ.prev = newNode;
         if (pred == null)
+            // 如果succ就是头节点了, 前面没有节点了, 就把头节点指向newNode, 不用再去维护pred和succ的关系了
+            // 此时会有1条链, newNode <=> succ
             first = newNode;
         else
+            // 将pred的下一个节点指向newNode
+            // 此时会有1条链, pred X succ, pred <=> newNode <=> succ
             pred.next = newNode;
+        // 3. 链表长度+1
         size++;
         modCount++;
     }
@@ -290,6 +311,7 @@ public class LinkedList<E>
      * @param e the element to add
      */
     public void addFirst(E e) {
+        // 在双向链表头部插入一个元素
         linkFirst(e);
     }
 
@@ -301,6 +323,7 @@ public class LinkedList<E>
      * @param e the element to add
      */
     public void addLast(E e) {
+        // 在双向链表尾部插入一个元素
         linkLast(e);
     }
 
@@ -335,6 +358,7 @@ public class LinkedList<E>
      * @return {@code true} (as specified by {@link Collection#add})
      */
     public boolean add(E e) {
+        // 在双向链表尾部插入一个元素
         linkLast(e);
         return true;
     }
@@ -504,11 +528,14 @@ public class LinkedList<E>
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public void add(int index, E element) {
+        // 1. 判断index是否合法
         checkPositionIndex(index);
 
+        // 2. 如果插入队尾, 就直接执行linkLast()方法
         if (index == size)
             linkLast(element);
         else
+            // 3. 否则, 先找到index所在的node节点, 插入到这个node节点之前
             linkBefore(element, node(index));
     }
 
@@ -566,12 +593,15 @@ public class LinkedList<E>
     Node<E> node(int index) {
         // assert isElementIndex(index);
 
+        // 1. 判断index在链表前半部分还是后半部分
         if (index < (size >> 1)) {
+            // 如果index在链表的前半部分, 就从链表的first指针往后遍历
             Node<E> x = first;
             for (int i = 0; i < index; i++)
                 x = x.next;
             return x;
         } else {
+            // 如果index在链表的后半部分, 就从链表的last指针往前遍历
             Node<E> x = last;
             for (int i = size - 1; i > index; i--)
                 x = x.prev;
