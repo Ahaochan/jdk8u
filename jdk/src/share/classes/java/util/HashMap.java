@@ -281,6 +281,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         final int hash;
         final K key;
         V value;
+        // next指针组成一个单向链表, 用于解决hash冲突
         Node<K,V> next;
 
         Node(int hash, K key, V value, Node<K,V> next) {
@@ -405,6 +406,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /**
      * The number of key-value mappings contained in this map.
      */
+    // 当前Map里有多少个键值对, 当size > threshold, 也就是size > capacity * loadFactory 时, 会对table数组进行扩容
     transient int size;
 
     /**
@@ -425,6 +427,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     // Additionally, if the table array has not been allocated, this
     // field holds the initial array capacity, or zero signifying
     // DEFAULT_INITIAL_CAPACITY.)
+    // 临界值, 当size > threshold, 也就是size > capacity * loadFactory 时, 会对table数组进行扩容
     int threshold;
 
     /**
@@ -454,6 +457,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         if (loadFactor <= 0 || Float.isNaN(loadFactor))
             throw new IllegalArgumentException("Illegal load factor: " +
                                                loadFactor);
+        // loadFactor负载因子, 默认0.75
         this.loadFactor = loadFactor;
         this.threshold = tableSizeFor(initialCapacity);
     }
