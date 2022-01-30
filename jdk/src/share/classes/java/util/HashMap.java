@@ -338,6 +338,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     static final int hash(Object key) {
         int h;
+        // h>>>16让key的高16位参与hash运算
         return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
     }
 
