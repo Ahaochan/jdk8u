@@ -377,6 +377,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * Returns a power of two size for the given target capacity.
+     * 返回大于输入参数且最近的2的整数次幂的数
      */
     static final int tableSizeFor(int cap) {
         int n = cap - 1;
@@ -460,6 +461,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                                                loadFactor);
         // loadFactor负载因子, 默认0.75
         this.loadFactor = loadFactor;
+        // 返回大于输入参数且最近的2的整数次幂的数
         this.threshold = tableSizeFor(initialCapacity);
     }
 
@@ -631,11 +633,24 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
                    boolean evict) {
         Node<K,V>[] tab; Node<K,V> p; int n, i;
+        // tab = table;
+        // if(tab != null) n = tab.length;
+        // if(tab == null || n == 0) {
+        //     tab = resize();
+        //     n = tab.length;
+        // }
+        // 第一次进来会走resize()方法初始化Node数组
         if ((tab = table) == null || (n = tab.length) == 0)
             n = (tab = resize()).length;
+        // i = (n - 1) & hash;
+        // p = tab[i];
+        // if(p == null) tab[i] = newNode(hash, key, value, null);
+        // 将hash值对数组长度取模, 定位到这个Node数组的某个index下标
         if ((p = tab[i = (n - 1) & hash]) == null)
+            // 如果节点为null, 就说明没有hash冲突, 创建一个头节点
             tab[i] = newNode(hash, key, value, null);
         else {
+            // 如果节点不为null, 就说明hash冲突了, 用链表或者红黑树解决hash冲突
             Node<K,V> e; K k;
             if (p.hash == hash &&
                 ((k = p.key) == key || (key != null && key.equals(k))))
@@ -681,6 +696,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @return the table
      */
     final Node<K,V>[] resize() {
+        // 1. 初始化新的capacity和threshold
         Node<K,V>[] oldTab = table;
         int oldCap = (oldTab == null) ? 0 : oldTab.length;
         int oldThr = threshold;
@@ -695,12 +711,18 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 newThr = oldThr << 1; // double threshold
         }
         else if (oldThr > 0) // initial capacity was placed in threshold
+            // 有参构造函数进来, 会初始化好threshold
+            // 所以这里直接拿threshold作为新的capacity了
+            // 然后还会执行下面的if, 初始化新的threshold
             newCap = oldThr;
         else {               // zero initial threshold signifies using defaults
+            // 默认构造函数进来的时候, capacity和threshold都为0
+            // 进行初始化, capacity为16, threshold为16*0.75=12
             newCap = DEFAULT_INITIAL_CAPACITY;
             newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
         }
         if (newThr == 0) {
+            // 如果threshold没有值, 就初始化
             float ft = (float)newCap * loadFactor;
             newThr = (newCap < MAXIMUM_CAPACITY && ft < (float)MAXIMUM_CAPACITY ?
                       (int)ft : Integer.MAX_VALUE);
@@ -709,6 +731,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         @SuppressWarnings({"rawtypes","unchecked"})
         Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
         table = newTab;
+        // 如果是第一次resize, 那么就返回newTab出去了
         if (oldTab != null) {
             for (int j = 0; j < oldCap; ++j) {
                 Node<K,V> e;
