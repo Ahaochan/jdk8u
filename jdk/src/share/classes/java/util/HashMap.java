@@ -639,30 +639,39 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         //     tab = resize();
         //     n = tab.length;
         // }
-        // 第一次进来会走resize()方法初始化Node数组
+        // 1. 第一次进来会走resize()方法初始化Node数组
         if ((tab = table) == null || (n = tab.length) == 0)
             n = (tab = resize()).length;
         // i = (n - 1) & hash;
         // p = tab[i];
         // if(p == null) tab[i] = newNode(hash, key, value, null);
-        // 将hash值对数组长度取模, 定位到这个Node数组的某个index下标
+        // 2. 将hash值对数组长度取模, 定位到这个Node数组的某个index下标, 然后set值进去
         if ((p = tab[i = (n - 1) & hash]) == null)
-            // 如果节点为null, 就说明没有hash冲突, 创建一个头节点
+            // 2.1. 如果节点为null, 就说明没有hash冲突, 创建一个头节点
             tab[i] = newNode(hash, key, value, null);
         else {
-            // 如果节点不为null, 就说明hash冲突了, 用链表或者红黑树解决hash冲突
+            // 2.2. 如果节点不为null, 就说明hash冲突了, 用链表或者红黑树解决hash冲突
             Node<K,V> e; K k;
+            // 2.3. 下面这套if就是找出相同key的节点, 然后进覆盖节点
             if (p.hash == hash &&
                 ((k = p.key) == key || (key != null && key.equals(k))))
+                // 2.3.1. 数组下标为index的节点, 或者链表的头节点, 红黑树的根节点
+                //        反正就是判断这个节点和要put进来的节点的key是否匹配, 定位出这个相同key的节点
                 e = p;
             else if (p instanceof TreeNode)
+                // 2.3.3. 数组下标为index的节点已经进化成一个红黑树了
                 e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
             else {
+                // 2.3.2 数组下标为index的节点下面还是一条链表, 还没进化成红黑树
+                //       遍历这个链表, 看能不能找到相同key的节点, 如果找不到就在链表尾部加入一个节点
                 for (int binCount = 0; ; ++binCount) {
                     if ((e = p.next) == null) {
+                        // 就在链表尾部加入一个节点
                         p.next = newNode(hash, key, value, null);
+                        // 链表节点数(包括数组的头节点)超过8个, 就转为红黑树
                         if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
                             treeifyBin(tab, hash);
+                        // 这里跳出循环后, 是不会执行2.4的逻辑的, 因为e为null
                         break;
                     }
                     if (e.hash == hash &&
@@ -671,15 +680,20 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     p = e;
                 }
             }
+            // 2.4. 如果已经存在一个相同key的节点, 就覆盖值
             if (e != null) { // existing mapping for key
                 V oldValue = e.value;
+                // 如果onlyIfAbsent为true, 那么就只有旧值为null的情况下才能set值到这个节点上
+                // 如果onlyIfAbsent为false, 就不管, 直接set值到这个节点上
                 if (!onlyIfAbsent || oldValue == null)
                     e.value = value;
                 afterNodeAccess(e);
+                // 把旧值返回出去
                 return oldValue;
             }
         }
         ++modCount;
+        // 3. 如果是一个新的节点, 就维护这个size变量, 如果超过了threshold, 就进行扩容
         if (++size > threshold)
             resize();
         afterNodeInsertion(evict);
