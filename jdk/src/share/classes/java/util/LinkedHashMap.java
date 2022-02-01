@@ -255,6 +255,7 @@ public class LinkedHashMap<K,V>
     Node<K,V> newNode(int hash, K key, V value, Node<K,V> e) {
         LinkedHashMap.Entry<K,V> p =
             new LinkedHashMap.Entry<K,V>(hash, key, value, e);
+        // 创建节点后, 将这个节点连接到双向链表最后面
         linkNodeLast(p);
         return p;
     }
@@ -281,6 +282,7 @@ public class LinkedHashMap<K,V>
     }
 
     void afterNodeRemoval(Node<K,V> e) { // unlink
+        // 从双向链表中删除这个节点
         LinkedHashMap.Entry<K,V> p =
             (LinkedHashMap.Entry<K,V>)e, b = p.before, a = p.after;
         p.before = p.after = null;
@@ -304,22 +306,31 @@ public class LinkedHashMap<K,V>
 
     void afterNodeAccess(Node<K,V> e) { // move node to last
         LinkedHashMap.Entry<K,V> last;
+        // accessOrder默认为false
+        // 如果开启, 就会每次操作这个节点时, 把这个节点挪到双向链表的最后一个节点, 用于做LRU算法
         if (accessOrder && (last = tail) != e) {
             LinkedHashMap.Entry<K,V> p =
                 (LinkedHashMap.Entry<K,V>)e, b = p.before, a = p.after;
             p.after = null;
+            // 如果当前节点没有前置节点, 就说明当前节点是第一个节点
             if (b == null)
                 head = a;
             else
+                // 否则就让前置节点before, 直接连接后置节点after, 跳过当前节点
                 b.after = a;
+            // 如果当前节点有后置节点, 就让后置节点after, 直接连接前置节点before, 跳过当前节点
             if (a != null)
                 a.before = b;
             else
+                // 否则就将当前节点的前一个节点作为最后一个节点, 因为当前节点要先提出来做后续关联操作的
                 last = b;
+            // 如果最后节点为null, 说明双向链表的元素只有一个, 就设置当前节点为第一个节点
             if (last == null)
                 head = p;
             else {
+                // 否则, 就把当前节点的前置节点指向最后一个节点
                 p.before = last;
+                // 最后一个节点的下一个节点指向当前节点
                 last.after = p;
             }
             tail = p;
