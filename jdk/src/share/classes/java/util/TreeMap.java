@@ -534,6 +534,7 @@ public class TreeMap<K,V>
      */
     public V put(K key, V value) {
         Entry<K,V> t = root;
+        // 1. 第一次进来, 初始化红黑树root节点
         if (t == null) {
             compare(key, key); // type (and possibly null) check
 
@@ -545,6 +546,7 @@ public class TreeMap<K,V>
         int cmp;
         Entry<K,V> parent;
         // split comparator and comparable paths
+        // 2. 如果自定义的comparator比较器, 就用来排序, 否则就用默认的compareTo()方法
         Comparator<? super K> cpr = comparator;
         if (cpr != null) {
             do {
@@ -574,11 +576,13 @@ public class TreeMap<K,V>
                     return t.setValue(value);
             } while (t != null);
         }
+        // 3. 定位到要插入的位置, 根据比较结果, 插入当前节点的左子树或者右子树
         Entry<K,V> e = new Entry<>(key, value, parent);
         if (cmp < 0)
             parent.left = e;
         else
             parent.right = e;
+        // 4. 平衡红黑树的核心代码
         fixAfterInsertion(e);
         size++;
         modCount++;
