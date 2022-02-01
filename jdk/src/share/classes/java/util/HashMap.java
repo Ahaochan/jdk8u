@@ -668,7 +668,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     if ((e = p.next) == null) {
                         // 就在链表尾部加入一个节点
                         p.next = newNode(hash, key, value, null);
-                        // 链表节点数(包括数组的头节点)超过8个, 就转为红黑树
+                        // 数组中下标为index的节点, 它后面挂着的链表节点数之和(包括本次创建的新节点)大于等于8个, 就转为红黑树
                         if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
                             treeifyBin(tab, hash);
                         // 这里跳出循环后, 是不会执行2.4的逻辑的, 因为e为null
@@ -800,8 +800,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY)
             resize();
         else if ((e = tab[index = (n - 1) & hash]) != null) {
+            // 定位到数组的某个节点下的链表要转为红黑树, 赋值到变量e上
             TreeNode<K,V> hd = null, tl = null;
             do {
+                // 将链表的节点转为红黑树的节点
                 TreeNode<K,V> p = replacementTreeNode(e, null);
                 if (tl == null)
                     hd = p;
@@ -810,7 +812,9 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     tl.next = p;
                 }
                 tl = p;
+            // 循环完整条链表, 构造一条TreeNode类型的双向链表
             } while ((e = e.next) != null);
+            // 这里的hd是头节点, 这里就要去构造红黑树, 从双向链表构造成一个树形结构了
             if ((tab[index] = hd) != null)
                 hd.treeify(tab);
         }
