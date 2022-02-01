@@ -716,12 +716,16 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         int oldThr = threshold;
         int newCap, newThr = 0;
         if (oldCap > 0) {
+            // 进入这个if说明是在进行数组扩容
+
             if (oldCap >= MAXIMUM_CAPACITY) {
                 threshold = Integer.MAX_VALUE;
                 return oldTab;
             }
+            // 这里数组长度乘2
             else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
                      oldCap >= DEFAULT_INITIAL_CAPACITY)
+                // 阈值也要乘2
                 newThr = oldThr << 1; // double threshold
         }
         else if (oldThr > 0) // initial capacity was placed in threshold
@@ -732,6 +736,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         else {               // zero initial threshold signifies using defaults
             // 默认构造函数进来的时候, capacity和threshold都为0
             // 进行初始化, capacity为16, threshold为16*0.75=12
+            // 当size > threshold时, 就会进行扩容
             newCap = DEFAULT_INITIAL_CAPACITY;
             newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
         }
@@ -747,21 +752,27 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         table = newTab;
         // 如果是第一次resize, 那么就返回newTab出去了
         if (oldTab != null) {
+            // 如果是扩容, 那就要进行rehash
             for (int j = 0; j < oldCap; ++j) {
                 Node<K,V> e;
+                // 遍历老数组的每一个元素
                 if ((e = oldTab[j]) != null) {
                     oldTab[j] = null;
+                    // 如果不是链表也不是红黑树, 就直接进行rehash, 赋值到新数组上
                     if (e.next == null)
                         newTab[e.hash & (newCap - 1)] = e;
                     else if (e instanceof TreeNode)
+                        // 如果是红黑树
                         ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
                     else { // preserve order
+                        // 如果是链表, 遍历链表的每个节点
                         Node<K,V> loHead = null, loTail = null;
                         Node<K,V> hiHead = null, hiTail = null;
                         Node<K,V> next;
                         do {
                             next = e.next;
                             if ((e.hash & oldCap) == 0) {
+                                // 当前节点留在原链表上, 就记录在loHead链表上
                                 if (loTail == null)
                                     loHead = e;
                                 else
@@ -769,6 +780,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                                 loTail = e;
                             }
                             else {
+                                // 当前节点需要迁移, 就记录在hiHead链表上
                                 if (hiTail == null)
                                     hiHead = e;
                                 else
@@ -776,10 +788,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                                 hiTail = e;
                             }
                         } while ((e = next) != null);
+                        // loHead链表放在数组的原位
                         if (loTail != null) {
                             loTail.next = null;
                             newTab[j] = loHead;
                         }
+                        // hiHead链表放在数组的另一个位置, 在原来的下标j的基础上加上原数组长度oldCap
                         if (hiTail != null) {
                             hiTail.next = null;
                             newTab[j + oldCap] = hiHead;
