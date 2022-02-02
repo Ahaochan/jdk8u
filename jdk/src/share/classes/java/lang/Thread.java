@@ -696,6 +696,7 @@ class Thread implements Runnable {
     }
 
     /**
+     * 执行start()方法让这个线程开始执行. Java虚拟机会自己去调用run()方法
      * Causes this thread to begin execution; the Java Virtual Machine
      * calls the <code>run</code> method of this thread.
      * <p>
@@ -704,6 +705,7 @@ class Thread implements Runnable {
      * <code>start</code> method) and the other thread (which executes its
      * <code>run</code> method).
      * <p>
+     * 禁止多次调用start()方法
      * It is never legal to start a thread more than once.
      * In particular, a thread may not be restarted once it has completed
      * execution.
@@ -721,16 +723,19 @@ class Thread implements Runnable {
          *
          * A zero status value corresponds to state "NEW".
          */
+        // 如果线程状态不是new, 就不允许调用start()启动线程
         if (threadStatus != 0)
             throw new IllegalThreadStateException();
 
         /* Notify the group that this thread is about to be started
          * so that it can be added to the group's list of threads
          * and the group's unstarted count can be decremented. */
+        // 将当前线程加入线程组中
         group.add(this);
 
         boolean started = false;
         try {
+            // JVM会去调用Thread的run()方法
             start0();
             started = true;
         } finally {
@@ -761,6 +766,7 @@ class Thread implements Runnable {
      */
     @Override
     public void run() {
+        // 如果传入了Runnable, 就去执行Runnable的run()方法
         if (target != null) {
             target.run();
         }
