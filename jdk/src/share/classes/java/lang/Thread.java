@@ -277,15 +277,21 @@ class Thread implements Runnable {
     public static native Thread currentThread();
 
     /**
+     * 告诉执行这个线程的cpu, 把执行机会让给其他线程去执行. 注意, cpu也可以自由忽略这个hint
      * A hint to the scheduler that the current thread is willing to yield
      * its current use of a processor. The scheduler is free to ignore this
      * hint.
      *
+     * yield是一个启发式探索式的尝试, 尝试去相对的提升多个线程并发执行的进度, 避免某个线程长时间占用一个cpu
      * <p> Yield is a heuristic attempt to improve relative progression
-     * between threads that would otherwise over-utilise a CPU. Its use
+     * between threads that would otherwise over-utilise a CPU.
+     * 你需要用这个方法, 需要在严格的测试环境下做大量的测试, 确保能达到预期的效果
+     * Its use
      * should be combined with detailed profiling and benchmarking to
      * ensure that it actually has the desired effect.
      *
+     * 很少有人能正确使用这个方法. 这个方法常见于debug和test场景.
+     * 可以用来复现锁争用导致的一些bug, 也可以用来设计一些并发控制的工具
      * <p> It is rarely appropriate to use this method. It may be useful
      * for debugging or testing purposes, where it may help to reproduce
      * bugs due to race conditions. It may also be useful when designing
