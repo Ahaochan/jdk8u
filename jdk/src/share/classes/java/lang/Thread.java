@@ -45,33 +45,44 @@ import sun.security.util.SecurityConstants;
 
 
 /**
+ * 一个线程是在一个程序里的执行单元. Java虚拟机允许在一个应用程序里创建多个线程去并发执行任务.
  * A <i>thread</i> is a thread of execution in a program. The Java
  * Virtual Machine allows an application to have multiple threads of
  * execution running concurrently.
  * <p>
+ * 每个线程都有优先级. 优先级更高的线程比优先级低的线程更优先执行.
+ * 每个线程可以被标记是否daemon线程.
  * Every thread has a priority. Threads with higher priority are
  * executed in preference to threads with lower priority. Each thread
- * may or may not also be marked as a daemon. When code running in
+ * may or may not also be marked as a daemon.
+ * 当在线程中用代码创建了新的线程对象, 新线程会继承创建这个线程的线程的优先级和daemon属性
+ * When code running in
  * some thread creates a new <code>Thread</code> object, the new
  * thread has its priority initially set equal to the priority of the
  * creating thread, and is a daemon thread if and only if the
  * creating thread is a daemon.
  * <p>
+ * 当Java虚拟机启动时, 会创建一个非daemon的main线程. Java虚拟机会继续执行这些线程直到以下情况出现
  * When a Java Virtual Machine starts up, there is usually a single
  * non-daemon thread (which typically calls the method named
  * <code>main</code> of some designated class). The Java Virtual
  * Machine continues to execute threads until either of the following
  * occurs:
  * <ul>
+ * 第一种情况就是调用了exit强制退出
  * <li>The <code>exit</code> method of class <code>Runtime</code> has been
  *     called and the security manager has permitted the exit operation
  *     to take place.
+ * 第二种情况就是所有非daemon线程都死掉, 不管是结束执行还是抛出异常
  * <li>All threads that are not daemon threads have died, either by
  *     returning from the call to the <code>run</code> method or by
  *     throwing an exception that propagates beyond the <code>run</code>
  *     method.
  * </ul>
  * <p>
+ * 这里有两种方法创建新线程,
+ * 一种是创建Thread的子类, 重写run()方法.
+ * 另一种是实现Runnable接口, 实现run()方法, 传到Thread对象里执行
  * There are two ways to create a new thread of execution. One is to
  * declare a class to be a subclass of <code>Thread</code>. This
  * subclass should override the <code>run</code> method of class
@@ -373,6 +384,7 @@ class Thread implements Runnable {
 
         this.name = name;
 
+        // 获取创建这个Thread的线程
         Thread parent = currentThread();
         SecurityManager security = System.getSecurityManager();
         if (g == null) {
@@ -387,6 +399,7 @@ class Thread implements Runnable {
             /* If the security doesn't have a strong opinion of the matter
                use the parent thread group. */
             if (g == null) {
+                // 如果没有指定线程组, 就继承父线程的线程组
                 g = parent.getThreadGroup();
             }
         }
@@ -406,6 +419,7 @@ class Thread implements Runnable {
 
         g.addUnstarted();
 
+        // 继承父线程的线程组, daemon, 线程优先级
         this.group = g;
         this.daemon = parent.isDaemon();
         this.priority = parent.getPriority();
@@ -424,6 +438,7 @@ class Thread implements Runnable {
         this.stackSize = stackSize;
 
         /* Set thread ID */
+        // 分配一个long类型的自增的线程id
         tid = nextThreadID();
     }
 
