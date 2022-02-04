@@ -594,6 +594,7 @@ public final class Unsafe {
      */
     @Deprecated
     public int fieldOffset(Field f) {
+        // 获取这个字段在当前类的内存地址偏移量
         if (Modifier.isStatic(f.getModifiers()))
             return (int) staticFieldOffset(f);
         else
@@ -667,6 +668,7 @@ public final class Unsafe {
      * this method reports its result as a long value.
      * @see #getInt(Object, long)
      */
+    // 获取某个字段在这个类的内存偏移量
     public native long objectFieldOffset(Field f);
 
     /**
@@ -1031,7 +1033,9 @@ public final class Unsafe {
     public final int getAndAddInt(Object o, long offset, int delta) {
         int v;
         do {
+            // 从o这个对象获取内存地址偏移量为offset的某个字段的值, 并转为int型
             v = getIntVolatile(o, offset);
+            // 然后CAS无限循环直到成功
         } while (!compareAndSwapInt(o, offset, v, v + delta));
         return v;
     }
