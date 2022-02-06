@@ -588,12 +588,18 @@ public abstract class AbstractQueuedSynchronizer
     private Node enq(final Node node) {
         for (;;) {
             Node t = tail;
+            // 1. 如果尾指针tail为null, 说明链表为空, 要进行初始化
             if (t == null) { // Must initialize
+                // 先给头节点head设置一个空节点, 尾节点tail也指向同一个空节点
                 if (compareAndSetHead(new Node()))
                     tail = head;
+                // 初始化完毕之后, 继续循环, 走下面的分支
             } else {
+                // 2. 如果尾指针tail不为null了, 就把节点node的prev指针指向链表的尾指针tail
                 node.prev = t;
+                // 3. 然后CAS, 将尾指针tail指向现在的节点node
                 if (compareAndSetTail(t, node)) {
+                    // 4. 再将旧的尾指针t的next指针指向现在的节点node
                     t.next = node;
                     return t;
                 }
@@ -611,14 +617,17 @@ public abstract class AbstractQueuedSynchronizer
         // 1. 将当前线程封装成一个Node节点
         Node node = new Node(Thread.currentThread(), mode);
         // Try the fast path of enq; backup to full enq on failure
+        // 2. 尝试快速将node节点加入双向链表尾部, 如果失败就走enq()做降级
         Node pred = tail;
         if (pred != null) {
             node.prev = pred;
+            // 失败一次就不继续了, 走下面的enq()方法不断CAS尝试加入双向链表尾部
             if (compareAndSetTail(pred, node)) {
                 pred.next = node;
                 return node;
             }
         }
+        // 3. CAS失败后的降级措施, 不断CAS尝试将node节点加入到双向链表尾部
         enq(node);
         return node;
     }
@@ -805,6 +814,7 @@ public abstract class AbstractQueuedSynchronizer
              * This node has already set status asking a release
              * to signal it, so it can safely park.
              */
+            // 直接返回true, 要阻塞等待
             return true;
         if (ws > 0) {
             /*
@@ -821,6 +831,12 @@ public abstract class AbstractQueuedSynchronizer
              * need a signal, but don't park yet.  Caller will need to
              * retry to make sure it cannot acquire before parking.
              */
+            // pred节点的waitStatus必须是0或者PROPAGATE, 表示我们需要一个信号signal, 但不需要阻塞等待.
+            // 调用者需要重试, 保证在阻塞等待前不能acquire ????
+
+            // 如果是初始化的一个Node节点, 它的waitStatus是没有初始化的, 也就是0
+            // 这里会CAS将其设置为-1, 也就是Node.SIGNAL
+            // 等下次循环进来, 会走ws == Node.SIGNAL的逻辑, 也就是直接返回true, 要阻塞等待
             compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
         }
         return false;
@@ -839,6 +855,7 @@ public abstract class AbstractQueuedSynchronizer
      * @return {@code true} if interrupted
      */
     private final boolean parkAndCheckInterrupt() {
+        // 将一个线程进行挂起, 需要另一个线程执行unpark操作取消挂起
         LockSupport.park(this);
         return Thread.interrupted();
     }
@@ -865,14 +882,22 @@ public abstract class AbstractQueuedSynchronizer
         try {
             boolean interrupted = false;
             for (;;) {
+                // 拿到当前节点node的上一个节点
                 final Node p = node.predecessor();
+                // 如果当前节点的前一个节点是双向链表CLH的头节点head,
+                // 那就尝试用当前节点进行加锁, 因为下次获取锁的节点就是当前节点node了
                 if (p == head && tryAcquire(arg)) {
+                    // 获取锁成功了, 就将当前节点node设置为头节点head, 以便让下一个节点也不停的tryAcquire
                     setHead(node);
+                    // 释放引用, 让当前节点node的上一个节点p可以被GC回收
                     p.next = null; // help GC
                     failed = false;
                     return interrupted;
                 }
+                // 如果还没轮到当前节点去加锁, 或者当前节点加锁失败了
+                // shouldParkAfterFailedAcquire()方法就判断一下node节点的waitStatus, 判断是否需要将当前线程挂起, 阻塞等待
                 if (shouldParkAfterFailedAcquire(p, node) &&
+                    // 如果是的话, 就执行parkAndCheckInterrupt()方法, 通过LockSupport.park()将当前线程挂起
                     parkAndCheckInterrupt())
                     interrupted = true;
             }
@@ -1203,7 +1228,9 @@ public abstract class AbstractQueuedSynchronizer
     public final void acquire(int arg) {
         // 1. tryAcquire()尝试加锁
         if (!tryAcquire(arg) &&
-        // 2. 如果tryAcquire()返回false, 尝试加锁失败, 就会把当前线程封装成一个Node节点, 加入等待队列CLH中
+        // 2. 如果tryAcquire()返回false, 尝试加锁失败
+        // 2.1. addWaiter()就会把当前线程封装成一个Node节点, 加入双向链表CLH的尾部
+        // 2.2. acquireQueued()会将当前线程挂起等待
             acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
             selfInterrupt();
     }
