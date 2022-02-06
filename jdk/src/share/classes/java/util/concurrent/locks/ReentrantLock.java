@@ -127,21 +127,29 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          * subclasses, but both need nonfair try for trylock method.
          */
         final boolean nonfairTryAcquire(int acquires) {
+            // 非公平锁NonfairSync加锁会调用到这个方法
             final Thread current = Thread.currentThread();
             int c = getState();
+            // 如果state为0, 说明还没有加锁, 就进行加锁
             if (c == 0) {
+                // 再判断一次, 避免中途有人释放锁了.
+                // 和NonfairSync的lock()方法一样的逻辑, state+1, 记录当前线程为加锁线程
                 if (compareAndSetState(0, acquires)) {
                     setExclusiveOwnerThread(current);
                     return true;
                 }
             }
+            // 如果state不为0, 说明加过锁了, 就判断下当前线程是不是加锁的线程, 然后重入, state+1
             else if (current == getExclusiveOwnerThread()) {
                 int nextc = c + acquires;
                 if (nextc < 0) // overflow
                     throw new Error("Maximum lock count exceeded");
+                // state是volatile修饰的, 保证了可见性
                 setState(nextc);
                 return true;
             }
+            // 如果已经加锁了, 并且当前线程不是当时加锁的线程
+            // 那么就直接返回false, 快速失败, 不阻塞. 因为这个是tryAcquire()方法
             return false;
         }
 
@@ -204,12 +212,18 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          */
         final void lock() {
             if (compareAndSetState(0, 1))
+                // CAS尝试将state设置为1, 意思是已经有线程占用这个锁了
+                // 然后指定当前线程为独占线程
                 setExclusiveOwnerThread(Thread.currentThread());
             else
+                // 如果CAS失败, 说明已经有锁了, 那么就会判断独占线程是不是当前线程
+                // 如果独占线程是当前线程, 就重入, state+1
+                // 如果独占线程不是当前线程, 就入队, 等待唤醒
                 acquire(1);
         }
 
         protected final boolean tryAcquire(int acquires) {
+            // 上面的acquire(1)实际上会调用到这个方法
             return nonfairTryAcquire(acquires);
         }
     }
@@ -254,6 +268,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * This is equivalent to using {@code ReentrantLock(false)}.
      */
     public ReentrantLock() {
+        // 默认的实现是非公平锁
         sync = new NonfairSync();
     }
 
@@ -264,6 +279,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * @param fair {@code true} if this lock should use a fair ordering policy
      */
     public ReentrantLock(boolean fair) {
+        // 选择实现是公平锁还是非公平锁
         sync = fair ? new FairSync() : new NonfairSync();
     }
 

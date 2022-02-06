@@ -47,6 +47,7 @@ package java.util.concurrent.locks;
  * @since 1.6
  * @author Doug Lea
  */
+// 记录独占模式下的独占线程, 贫血的抽象类
 public abstract class AbstractOwnableSynchronizer
     implements java.io.Serializable {
 
@@ -61,6 +62,7 @@ public abstract class AbstractOwnableSynchronizer
     /**
      * The current owner of exclusive mode synchronization.
      */
+    // 记录独占模式下的独占线程
     private transient Thread exclusiveOwnerThread;
 
     /**

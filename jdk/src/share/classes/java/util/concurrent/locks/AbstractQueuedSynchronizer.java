@@ -1195,7 +1195,9 @@ public abstract class AbstractQueuedSynchronizer
      *        can represent anything you like.
      */
     public final void acquire(int arg) {
+        // 1. tryAcquire()尝试加锁
         if (!tryAcquire(arg) &&
+        // 2. 如果tryAcquire()返回false, 尝试加锁失败, 就会把当前线程封装成一个Node节点, 加入等待队列CLH中
             acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
             selfInterrupt();
     }
