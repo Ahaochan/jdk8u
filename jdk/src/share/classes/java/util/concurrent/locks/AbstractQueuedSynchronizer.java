@@ -835,7 +835,7 @@ public abstract class AbstractQueuedSynchronizer
             // 调用者需要重试, 保证在阻塞等待前不能acquire ????
 
             // 如果是初始化的一个Node节点, 它的waitStatus是没有初始化的, 也就是0
-            // 这里会CAS将其设置为-1, 也就是Node.SIGNAL
+            // 这里会CAS将其设置为-1, 也就是初始化为Node.SIGNAL
             // 等下次循环进来, 会走ws == Node.SIGNAL的逻辑, 也就是直接返回true, 要阻塞等待
             compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
         }
