@@ -243,9 +243,11 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          * recursive call or no waiters or is first.
          */
         protected final boolean tryAcquire(int acquires) {
+            // 上面的acquire(1)实际上会调用到这个方法
             final Thread current = Thread.currentThread();
             int c = getState();
             if (c == 0) {
+                // 在做CAS的时候判断是否有线程正在排队, 和NonfairSync的区别就在于多了!hasQueuedPredecessors()这个判断逻辑
                 if (!hasQueuedPredecessors() &&
                     compareAndSetState(0, acquires)) {
                     setExclusiveOwnerThread(current);
