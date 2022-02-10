@@ -380,6 +380,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *         thread; and {@code false} otherwise
      */
     public boolean tryLock() {
+        // 尝试CAS加锁, 成功就true, 失败就false, 也不排队等待
         return sync.nonfairTryAcquire(1);
     }
 

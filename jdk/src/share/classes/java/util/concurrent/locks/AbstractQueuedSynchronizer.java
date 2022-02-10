@@ -945,23 +945,35 @@ public abstract class AbstractQueuedSynchronizer
             throws InterruptedException {
         if (nanosTimeout <= 0L)
             return false;
+        // 1. 设置截止时间
         final long deadline = System.nanoTime() + nanosTimeout;
+        // 2. 往双向链表节点后面插入当前线程节点, 标记为EXCLUSIVE独占模式
         final Node node = addWaiter(Node.EXCLUSIVE);
+        // 3. 后面和acquireQueued()是差不多的逻辑, 只是加了时间的判断
         boolean failed = true;
         try {
             for (;;) {
+                // 拿到当前节点node的上一个节点
                 final Node p = node.predecessor();
+                // 如果当前节点的前一个节点是双向链表CLH的头节点head,
+                // 那就尝试用当前节点进行加锁, 因为下次获取锁的节点就是当前节点node了
                 if (p == head && tryAcquire(arg)) {
+                    // 获取锁成功了, 就将当前节点node设置为头节点head, 以便让下一个节点也不停的tryAcquire
                     setHead(node);
+                    // 释放引用, 让当前节点node的上一个节点p可以被GC回收
                     p.next = null; // help GC
                     failed = false;
                     return true;
                 }
                 nanosTimeout = deadline - System.nanoTime();
                 if (nanosTimeout <= 0L)
+                    // 如果超时还没有获取到锁, 就返回false, 不再等待.
                     return false;
+                // 如果还没轮到当前节点去加锁, 或者当前节点加锁失败了
+                // shouldParkAfterFailedAcquire()方法就判断一下node节点的waitStatus, 判断是否需要将当前线程挂起, 阻塞等待
                 if (shouldParkAfterFailedAcquire(p, node) &&
                     nanosTimeout > spinForTimeoutThreshold)
+                    // 如果是的话, 就执行parkAndCheckInterrupt()方法, 通过LockSupport.park()将当前线程挂起, nanosTimeout之后自动唤醒
                     LockSupport.parkNanos(this, nanosTimeout);
                 if (Thread.interrupted())
                     throw new InterruptedException();
