@@ -1305,9 +1305,12 @@ public abstract class AbstractQueuedSynchronizer
      * @return the value returned from {@link #tryRelease}
      */
     public final boolean release(int arg) {
+        // 1. 释放锁, 返回true就全部释放, 返回false就说明可重入锁还没完全释放
+        //    tryRelease()是交给子类去实现的
         if (tryRelease(arg)) {
             Node h = head;
             if (h != null && h.waitStatus != 0)
+                // 2. 如果释放锁成功, 就唤醒双向链表的头节点的线程
                 unparkSuccessor(h);
             return true;
         }
