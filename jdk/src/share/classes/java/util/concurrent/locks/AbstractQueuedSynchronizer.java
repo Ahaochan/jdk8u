@@ -656,6 +656,7 @@ public abstract class AbstractQueuedSynchronizer
          * to clear in anticipation of signalling.  It is OK if this
          * fails or if status is changed by waiting thread.
          */
+        // 1. 第一步, 先将当前节点的状态清0
         int ws = node.waitStatus;
         if (ws < 0)
             compareAndSetWaitStatus(node, ws, 0);
@@ -666,13 +667,16 @@ public abstract class AbstractQueuedSynchronizer
          * traverse backwards from tail to find the actual
          * non-cancelled successor.
          */
+        // 2. 如果下一个节点校验不通过, 就走这个if逻辑, 找到一个合法的下一个的节点
         Node s = node.next;
         if (s == null || s.waitStatus > 0) {
             s = null;
+            // 从后往前遍历链表, 找到合法的下一个的节点
             for (Node t = tail; t != null && t != node; t = t.prev)
                 if (t.waitStatus <= 0)
                     s = t;
         }
+        // 3. 然后对找到的下一个节点的线程进行unpark唤醒
         if (s != null)
             LockSupport.unpark(s.thread);
     }
@@ -855,7 +859,7 @@ public abstract class AbstractQueuedSynchronizer
      * @return {@code true} if interrupted
      */
     private final boolean parkAndCheckInterrupt() {
-        // 将一个线程进行挂起, 需要另一个线程执行unpark操作取消挂起
+        // 将一个线程进行挂起, 需要另一个线程释放锁的时候执行unpark操作取消挂起
         LockSupport.park(this);
         return Thread.interrupted();
     }
@@ -1310,7 +1314,7 @@ public abstract class AbstractQueuedSynchronizer
         if (tryRelease(arg)) {
             Node h = head;
             if (h != null && h.waitStatus != 0)
-                // 2. 如果释放锁成功, 就唤醒双向链表的头节点的线程
+                // 2. 如果释放锁成功, 就唤醒双向链表的头节点的下一个节点的线程
                 unparkSuccessor(h);
             return true;
         }
