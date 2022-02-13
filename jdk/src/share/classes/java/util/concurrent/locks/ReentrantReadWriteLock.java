@@ -227,6 +227,7 @@ public class ReentrantReadWriteLock
      * default (nonfair) ordering properties.
      */
     public ReentrantReadWriteLock() {
+        // 默认也是非公平锁
         this(false);
     }
 
@@ -237,6 +238,7 @@ public class ReentrantReadWriteLock
      * @param fair {@code true} if this lock should use a fair ordering policy
      */
     public ReentrantReadWriteLock(boolean fair) {
+        // 这里的Sync、FairSync、NonfairSync都是ReentrantReadWriteLock自己实现的, 和ReentrantLock无关
         sync = fair ? new FairSync() : new NonfairSync();
         readerLock = new ReadLock(this);
         writerLock = new WriteLock(this);
@@ -378,6 +380,7 @@ public class ReentrantReadWriteLock
         }
 
         protected final boolean tryAcquire(int acquires) {
+            // 写锁的acquire(1)实际上会调用到这个方法
             /*
              * Walkthrough:
              * 1. If read count nonzero or write count nonzero
@@ -389,22 +392,32 @@ public class ReentrantReadWriteLock
              *    queue policy allows it. If so, update state
              *    and set owner.
              */
+
             Thread current = Thread.currentThread();
+            // state高16位代表读锁重入次数, 低16位代表写锁重入次数
             int c = getState();
+            // 获取低16位的写锁重入次数
             int w = exclusiveCount(c);
+            // 如果state不为0, 说明已经有写锁或者读锁了, 一开始没加锁就会跳过这个if
             if (c != 0) {
+                // 如果写锁重入次数为0, 说明之前加的是读锁, 读写互斥, 就返回false, 加写锁失败
+                // 如果写锁重入次数不为0, 说明之前加的是写锁, 就看看当前线程不是加写锁的独占线程, 如果不是就返回false, 加写锁失败
                 // (Note: if c != 0 and w == 0 then shared count != 0)
                 if (w == 0 || current != getExclusiveOwnerThread())
                     return false;
                 if (w + exclusiveCount(acquires) > MAX_COUNT)
                     throw new Error("Maximum lock count exceeded");
                 // Reentrant acquire
+                // 然后设置加写锁的可重入次数, 也就是state的低16位
                 setState(c + acquires);
                 return true;
             }
+            // 先判断写锁是不是要阻塞, 如果是非公平锁就不阻塞, 如果是公平锁, 就看AQS双向链表CLH有没有线程在排队, 有就阻塞
             if (writerShouldBlock() ||
+                // 然后CAS设置state变量, 因为这里是try尝试加锁, 所以不用阻塞, 直接返回true和false就行了
                 !compareAndSetState(c, c + acquires))
                 return false;
+            // 如果加写锁成功, 就记录当前线程为独占线程
             setExclusiveOwnerThread(current);
             return true;
         }
@@ -940,6 +953,7 @@ public class ReentrantReadWriteLock
          * time the write lock hold count is set to one.
          */
         public void lock() {
+            // 走AQS的acquire()方法, 会调用到Sync实现的tryAcquire()方法
             sync.acquire(1);
         }
 
