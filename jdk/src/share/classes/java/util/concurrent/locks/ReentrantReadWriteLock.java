@@ -458,7 +458,9 @@ public class ReentrantReadWriteLock
                 "attempt to unlock read lock, not locked by current thread");
         }
 
+        // 成功就返回1, 失败就返回-1
         protected final int tryAcquireShared(int unused) {
+            // 读锁的acquireShared(1)实际上会调用到这个方法
             /*
              * Walkthrough:
              * 1. If write lock held by another thread, fail.
@@ -475,10 +477,13 @@ public class ReentrantReadWriteLock
              *    saturated, chain to version with full retry loop.
              */
             Thread current = Thread.currentThread();
+            // state高16位代表读锁重入次数, 低16位代表写锁重入次数
             int c = getState();
+            // 获取低16位的写锁重入次数, 如果有其他线程占用了写锁, 那本次加读锁就直接失败
             if (exclusiveCount(c) != 0 &&
                 getExclusiveOwnerThread() != current)
                 return -1;
+            // 获取高16位的读锁重入次数
             int r = sharedCount(c);
             if (!readerShouldBlock() &&
                 r < MAX_COUNT &&
@@ -737,6 +742,7 @@ public class ReentrantReadWriteLock
          * purposes and lies dormant until the read lock has been acquired.
          */
         public void lock() {
+            // 读锁走AQS的acquireShared()方法, 会调用到Sync实现的tryAcquireShare()方法
             sync.acquireShared(1);
         }
 

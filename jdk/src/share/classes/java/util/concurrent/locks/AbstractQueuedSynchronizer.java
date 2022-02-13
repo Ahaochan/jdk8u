@@ -993,16 +993,23 @@ public abstract class AbstractQueuedSynchronizer
      * @param arg the acquire argument
      */
     private void doAcquireShared(int arg) {
+        // 1. 往双向链表节点后面插入当前线程节点, 标记为SHARED共享模式
         final Node node = addWaiter(Node.SHARED);
         boolean failed = true;
         try {
             boolean interrupted = false;
             for (;;) {
+                // 拿到当前节点node的上一个节点
                 final Node p = node.predecessor();
+                // 如果当前节点的前一个节点是双向链表CLH的头节点head,
                 if (p == head) {
+                    // 那就尝试用当前节点进行加锁, 因为下次获取锁的节点就是当前节点node了
+                    // 注意这里和acquireQueued()不同点在于, 这里是共享模式尝试获取锁
                     int r = tryAcquireShared(arg);
                     if (r >= 0) {
+                        // 获取锁成功了, 就将当前节点node设置为头节点head, 以便让下一个节点也不停的tryAcquire
                         setHeadAndPropagate(node, r);
+                        // 释放引用, 让当前节点node的上一个节点p可以被GC回收
                         p.next = null; // help GC
                         if (interrupted)
                             selfInterrupt();
@@ -1010,7 +1017,10 @@ public abstract class AbstractQueuedSynchronizer
                         return;
                     }
                 }
+                // 如果还没轮到当前节点去加锁, 或者当前节点加锁失败了
+                // shouldParkAfterFailedAcquire()方法就判断一下node节点的waitStatus, 判断是否需要将当前线程挂起, 阻塞等待
                 if (shouldParkAfterFailedAcquire(p, node) &&
+                    // 如果是的话, 就执行parkAndCheckInterrupt()方法, 通过LockSupport.park()将当前线程挂起
                     parkAndCheckInterrupt())
                     interrupted = true;
             }
@@ -1333,7 +1343,9 @@ public abstract class AbstractQueuedSynchronizer
      *        and can represent anything you like.
      */
     public final void acquireShared(int arg) {
+        // 返回-1说明加锁失败
         if (tryAcquireShared(arg) < 0)
+            // 就入队阻塞, 等到唤醒的时候再尝试tryAcquireShared(arg)
             doAcquireShared(arg);
     }
 
