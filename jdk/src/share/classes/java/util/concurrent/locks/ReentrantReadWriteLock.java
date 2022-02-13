@@ -369,12 +369,16 @@ public class ReentrantReadWriteLock
          */
 
         protected final boolean tryRelease(int releases) {
+            // 1. 先判断当前线程是否持有锁, 如果不是, 就不能释放写锁
             if (!isHeldExclusively())
                 throw new IllegalMonitorStateException();
+            // 2. 释放锁
             int nextc = getState() - releases;
+            // 3. 如果写锁的重入次数为0, 就把独占线程标识设置为null
             boolean free = exclusiveCount(nextc) == 0;
             if (free)
                 setExclusiveOwnerThread(null);
+            // 4. 设置state
             setState(nextc);
             return free;
         }
@@ -1148,6 +1152,7 @@ public class ReentrantReadWriteLock
          * hold this lock
          */
         public void unlock() {
+            // 走AQS的release()方法, 会调用到Sync实现的tryRelease()方法
             sync.release(1);
         }
 
