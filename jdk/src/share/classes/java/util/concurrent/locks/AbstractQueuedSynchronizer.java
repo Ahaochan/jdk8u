@@ -671,7 +671,7 @@ public abstract class AbstractQueuedSynchronizer
         Node s = node.next;
         if (s == null || s.waitStatus > 0) {
             s = null;
-            // 从后往前遍历链表, 找到合法的下一个的节点
+            // 从后往前遍历链表, 找到当前节点合法的下一个的节点
             for (Node t = tail; t != null && t != node; t = t.prev)
                 if (t.waitStatus <= 0)
                     s = t;
@@ -725,6 +725,7 @@ public abstract class AbstractQueuedSynchronizer
      * @param propagate the return value from a tryAcquireShared
      */
     private void setHeadAndPropagate(Node node, int propagate) {
+        // 修改头节点
         Node h = head; // Record old head for check below
         setHead(node);
         /*
@@ -743,10 +744,13 @@ public abstract class AbstractQueuedSynchronizer
          * racing acquires/releases, so most need signals now or soon
          * anyway.
          */
+        // ReentrantReadWriteLock返回的r为固定的1
+        // 这里是判断下一个节点是否是共享节点, 如果是, 也允许唤醒, 传播, 用于支持并发读
         if (propagate > 0 || h == null || h.waitStatus < 0 ||
             (h = head) == null || h.waitStatus < 0) {
             Node s = node.next;
             if (s == null || s.isShared())
+                // 唤醒, 传播, 用于支持并发读
                 doReleaseShared();
         }
     }
@@ -1008,6 +1012,7 @@ public abstract class AbstractQueuedSynchronizer
                     int r = tryAcquireShared(arg);
                     if (r >= 0) {
                         // 获取锁成功了, 就将当前节点node设置为头节点head, 以便让下一个节点也不停的tryAcquire
+                        // 注意这里和acquireQueued()不同点在于, 设置完头节点后, 如果下一个节点还是共享模式, 就继续释放锁, 唤醒线程, 并发的读
                         setHeadAndPropagate(node, r);
                         // 释放引用, 让当前节点node的上一个节点p可以被GC回收
                         p.next = null; // help GC
@@ -1526,6 +1531,8 @@ public abstract class AbstractQueuedSynchronizer
      */
     final boolean apparentlyFirstQueuedIsExclusive() {
         Node h, s;
+        // 头节点后第一个排队线程节点是否为独占模式, 如果是就返回true
+        // 这里用于 ReentrantReadWriteLock 读写锁的加读锁逻辑
         return (h = head) != null &&
             (s = h.next)  != null &&
             !s.isShared()         &&

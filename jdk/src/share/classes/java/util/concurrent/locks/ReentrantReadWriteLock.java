@@ -489,15 +489,22 @@ public class ReentrantReadWriteLock
                 return -1;
             // 获取高16位的读锁重入次数
             int r = sharedCount(c);
+            // 判断读锁是否要阻塞
+            // 如果是公平锁, 就看看有没有线程在排队, 有就true, 就不进入这个if, 阻塞, 慢慢排队
+            // 如果是非公平锁, 就判断头节点后第一个排队的线程是不是独占模式, 如果是独占模式就true, 就不进入这个if, 阻塞
             if (!readerShouldBlock() &&
                 r < MAX_COUNT &&
+                // CAS修改state, 增加高16位, 也就是读锁的重入次数+1
                 compareAndSetState(c, c + SHARED_UNIT)) {
                 if (r == 0) {
+                    // 之前都没有加过读锁, 当前线程是第一个加读锁的线程
                     firstReader = current;
                     firstReaderHoldCount = 1;
                 } else if (firstReader == current) {
+                    // 之前加过读锁了, 并且是当前线程加的读锁
                     firstReaderHoldCount++;
                 } else {
+                    // 之前加过读锁了, 不是当前线程加的读锁
                     HoldCounter rh = cachedHoldCounter;
                     if (rh == null || rh.tid != getThreadId(current))
                         cachedHoldCounter = rh = readHolds.get();
