@@ -705,6 +705,7 @@ public abstract class AbstractQueuedSynchronizer
                 if (ws == Node.SIGNAL) {
                     if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
                         continue;            // loop to recheck cases
+                    // 唤醒下一个线程
                     unparkSuccessor(h);
                 }
                 else if (ws == 0 &&
@@ -750,7 +751,7 @@ public abstract class AbstractQueuedSynchronizer
             (h = head) == null || h.waitStatus < 0) {
             Node s = node.next;
             if (s == null || s.isShared())
-                // 唤醒, 传播, 用于支持并发读
+                // 唤醒下一个线程, 传播, 用于支持并发读
                 doReleaseShared();
         }
     }
@@ -1409,7 +1410,9 @@ public abstract class AbstractQueuedSynchronizer
      * @return the value returned from {@link #tryReleaseShared}
      */
     public final boolean releaseShared(int arg) {
+        // 尝试释放共享锁
         if (tryReleaseShared(arg)) {
+            // 成功就唤醒下一个线程
             doReleaseShared();
             return true;
         }

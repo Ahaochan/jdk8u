@@ -427,12 +427,17 @@ public class ReentrantReadWriteLock
         }
 
         protected final boolean tryReleaseShared(int unused) {
+            // 读锁的releaseShared(1)实际上会调用到这个方法
             Thread current = Thread.currentThread();
+            // 如果当前线程是第一个加读锁的线程
             if (firstReader == current) {
                 // assert firstReaderHoldCount > 0;
+                // 并且加锁次数刚好是1, 说明释放这个读锁后, 就没有读锁了
                 if (firstReaderHoldCount == 1)
+                    // 所以要把记录第一个加读锁的线程的标识置null
                     firstReader = null;
                 else
+                    // 如果当前线程加了多个读锁, 就把读锁重入次数减1
                     firstReaderHoldCount--;
             } else {
                 HoldCounter rh = cachedHoldCounter;
@@ -447,12 +452,14 @@ public class ReentrantReadWriteLock
                 --rh.count;
             }
             for (;;) {
+                // CAS修改state变量, 读锁次数减1
                 int c = getState();
                 int nextc = c - SHARED_UNIT;
                 if (compareAndSetState(c, nextc))
                     // Releasing the read lock has no effect on readers,
                     // but it may allow waiting writers to proceed if
                     // both read and write locks are now free.
+                    // 如果减1后的读锁重入次数大于0, 说明锁还没有释放完全, 就返回false
                     return nextc == 0;
             }
         }
@@ -915,6 +922,7 @@ public class ReentrantReadWriteLock
          * is made available for write lock attempts.
          */
         public void unlock() {
+            // 读锁走AQS的releaseShared()方法, 会调用到Sync实现的tryReleaseShared()方法
             sync.releaseShared(1);
         }
 
