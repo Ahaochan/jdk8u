@@ -1705,6 +1705,7 @@ public abstract class AbstractQueuedSynchronizer
      * @return true if is reacquiring
      */
     final boolean isOnSyncQueue(Node node) {
+        // 如果当前节点类型是CONDITION, 就返回false, 这时会将当前节点持有的线程挂起
         if (node.waitStatus == Node.CONDITION || node.prev == null)
             return false;
         if (node.next != null) // If has successor, it must be on queue
@@ -1795,7 +1796,9 @@ public abstract class AbstractQueuedSynchronizer
     final int fullyRelease(Node node) {
         boolean failed = true;
         try {
+            // 获取AQS自己的state
             int savedState = getState();
+            // 释放所有的锁, 后面阻塞线程后, 让其他线程来竞争锁
             if (release(savedState)) {
                 failed = false;
                 return savedState;
@@ -1928,6 +1931,8 @@ public abstract class AbstractQueuedSynchronizer
                 unlinkCancelledWaiters();
                 t = lastWaiter;
             }
+            // 将当前线程封装成一个Node节点, 标记为CONDITION类型, 注意这里是不会加入AQS的CLH双向链表
+            // 而是加入ConditionObject自己的链表, 加入到链表尾部
             Node node = new Node(Thread.currentThread(), Node.CONDITION);
             if (t == null)
                 firstWaiter = node;
@@ -2108,10 +2113,14 @@ public abstract class AbstractQueuedSynchronizer
         public final void await() throws InterruptedException {
             if (Thread.interrupted())
                 throw new InterruptedException();
+            // 将当前线程封装成一个CONDITION类型的Node, 加入到ConditionObject自己的链表尾部
             Node node = addConditionWaiter();
+            // 释放所有的锁, 后面阻塞线程后, 让其他线程来竞争锁
             int savedState = fullyRelease(node);
             int interruptMode = 0;
+            // 如果当前节点类型是CONDITION, 就进入这个循环, 在这里是永远false, 也就是会一直走这个循环
             while (!isOnSyncQueue(node)) {
+                // 挂起当前节点持有的线程
                 LockSupport.park(this);
                 if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
                     break;
