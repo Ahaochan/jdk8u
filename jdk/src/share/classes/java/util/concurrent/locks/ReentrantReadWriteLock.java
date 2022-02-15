@@ -530,7 +530,9 @@ public class ReentrantReadWriteLock
              */
             HoldCounter rh = null;
             for (;;) {
+                // state高16位代表读锁重入次数, 低16位代表写锁重入次数
                 int c = getState();
+                // 获取低16位的写锁重入次数, 如果有其他线程占用了写锁, 那本次加读锁就直接失败
                 if (exclusiveCount(c) != 0) {
                     if (getExclusiveOwnerThread() != current)
                         return -1;
@@ -555,13 +557,18 @@ public class ReentrantReadWriteLock
                 }
                 if (sharedCount(c) == MAX_COUNT)
                     throw new Error("Maximum lock count exceeded");
+                // CAS修改state, 增加高16位, 也就是读锁的重入次数+1
                 if (compareAndSetState(c, c + SHARED_UNIT)) {
+                    // 获取高16位的读锁重入次数
                     if (sharedCount(c) == 0) {
+                        // 之前都没有加过读锁, 当前线程是第一个加读锁的线程
                         firstReader = current;
                         firstReaderHoldCount = 1;
                     } else if (firstReader == current) {
+                        // 之前加过读锁了, 并且是当前线程加的读锁
                         firstReaderHoldCount++;
                     } else {
+                        // 之前加过读锁了, 不是当前线程加的读锁
                         if (rh == null)
                             rh = cachedHoldCounter;
                         if (rh == null || rh.tid != getThreadId(current))
